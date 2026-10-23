@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Prompt', sans-serif;
+    background-color: #FFF0F3;
+    color: #4A3E3D;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .font-mono,
+  .tabular-nums {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #FFF0F3;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FFCCD6;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #FF85A2;
+}
+
+/* Floating Sparkling Bubble Animations (ฟองน้ำ/ฟองสบู่ฟรุ้งฟริ้งลอยขึ้นมา) */
+@keyframes bubbleFloat {
+  0% {
+    transform: translateY(108vh) translateX(0) scale(0.85);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.88;
+  }
+  25% {
+    transform: translateY(80vh) translateX(14px) scale(0.96);
+  }
+  50% {
+    transform: translateY(52vh) translateX(-16px) scale(1.04);
+  }
+  75% {
+    transform: translateY(26vh) translateX(12px) scale(0.98);
+  }
+  92% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(-15vh) translateX(-10px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+@keyframes sparkleDrift {
+  0% {
+    transform: translateY(105vh) scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(85vh) scale(1) rotate(60deg);
+    opacity: 0.95;
+  }
+  50% {
+    transform: translateY(50vh) scale(1.25) rotate(180deg);
+    opacity: 0.8;
+  }
+  85% {
+    transform: translateY(20vh) scale(0.95) rotate(300deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-10vh) scale(0.2) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes bubblePop {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(1.4);
+    opacity: 0.6;
+    filter: brightness(1.6);
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.animate-bubble-float {
+  animation-name: bubbleFloat;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.animate-sparkle-drift {
+  animation-name: sparkleDrift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.animate-bubble-pop {
+  animation: bubblePop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Realistic Dreamy Soap / Water Bubble Styling */
+.dreamy-bubble-skin {
+  background: radial-gradient(
+    circle at 35% 35%,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 225, 238, 0.45) 25%,
+    rgba(215, 240, 255, 0.3) 50%,
+    rgba(240, 215, 255, 0.35) 75%,
+    rgba(255, 185, 210, 0.4) 100%
+  );
+  box-shadow:
+    inset -3px -3px 8px rgba(255, 140, 180, 0.3),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.9),
+    0 4px 14px rgba(255, 160, 195, 0.25);
+  backdrop-filter: blur(1.5px);
+  border: 1.5px solid rgba(255, 255, 255, 0.65);
+}

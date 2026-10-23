@@ -1,0 +1,8 @@
+{
+  "name": "WebDash Pro",
+  "description": "Build React-based web apps with real-time analytics, secure user authentication, and seamless deployment to Vercel or Firebase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
