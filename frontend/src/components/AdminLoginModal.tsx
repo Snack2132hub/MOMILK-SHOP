@@ -168,7 +168,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
         </form>
 
         <p className="text-[11px] leading-relaxed text-stone-500">
-          เข้าสู่ระบบได้เฉพาะบัญชีที่สร้างใน Supabase Authentication และได้รับสิทธิ์ผู้ดูแลแล้ว ไม่มีบัญชีทดลองหรือปุ่มข้ามการเข้าสู่ระบบ
+          
         </p>
       </div>
     </div>
