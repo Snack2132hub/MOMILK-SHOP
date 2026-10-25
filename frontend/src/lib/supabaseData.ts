@@ -48,25 +48,29 @@ export async function submitReview(input: {
   proof_image_url?: string;
 }): Promise<SupabaseReview> {
   assertSupabaseConfigured();
-  const { data, error } = await supabase
-    .from('reviews')
-    .insert({
-      customer_name: input.customer_name.trim(),
-      customer_handle: input.customer_handle?.trim() || null,
-      rating: input.rating,
-      service_type: input.service_type,
-      comment: input.comment.trim(),
-      proof_image_url: input.proof_image_url || null,
-      status: 'pending',
-      likes: 0,
-      is_pinned: false,
-      admin_reply: null,
-      verified_slip: false,
-    })
-    .select()
-    .single();
+
+  // Do not request the inserted row back: anonymous users are intentionally
+  // unable to SELECT pending reviews. Generate the id/timestamp client-side,
+  // insert once, and return the submitted representation only after success.
+  const review: SupabaseReview = {
+    id: crypto.randomUUID(),
+    customer_name: input.customer_name.trim(),
+    customer_handle: input.customer_handle?.trim() || null,
+    rating: input.rating,
+    service_type: input.service_type,
+    comment: input.comment.trim(),
+    proof_image_url: input.proof_image_url || null,
+    status: 'pending',
+    likes: 0,
+    is_pinned: false,
+    admin_reply: null,
+    verified_slip: false,
+    created_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase.from('reviews').insert(review);
   if (error) throw error;
-  return data as SupabaseReview;
+  return review;
 }
 
 export async function listPublicTracks(): Promise<Array<SupabaseTrack & { publicUrl: string }>> {
