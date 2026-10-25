@@ -15,6 +15,7 @@ import { StorefrontView } from './components/StorefrontView';
 import { AdminDashboardView } from './components/AdminDashboardView';
 import { AdminLoginModal } from './components/AdminLoginModal';
 import { supabase } from './lib/supabase';
+import { submitReview } from './lib/supabaseData';
 
 const STORAGE_KEY = 'momilk_shop_fullstack_db_v1';
 
@@ -181,18 +182,27 @@ export default function App() {
   };
 
   // Add new customer review from Storefront
-  const handleAddReview = (
+  const handleAddReview = async (
     newRevData: Omit<ReviewItem, 'id' | 'likes' | 'createdAt' | 'timestampMs' | 'status'>
   ) => {
+    // Persist first. Do not show a successful submission when Supabase rejected it.
+    const savedReview = await submitReview({
+      customer_name: newRevData.customerName,
+      rating: newRevData.rating,
+      service_type: newRevData.serviceType,
+      comment: newRevData.comment,
+      // Proof files may be data URLs; keep the existing field for now.
+      proof_image_url: newRevData.proofImageUrl,
+    });
     const timestampStr = formatThaiTimestamp();
     const newReview: ReviewItem = {
       ...newRevData,
-      id: `rev-${Date.now()}`,
-      likes: 1,
-      likedByMe: true,
-      createdAt: timestampStr,
-      timestampMs: Date.now(),
-      status: db.storeSettings.requireReviewApproval ? 'pending' : 'approved',
+      id: savedReview.id,
+      likes: savedReview.likes,
+      likedByMe: false,
+      createdAt: new Date(savedReview.created_at).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }),
+      timestampMs: new Date(savedReview.created_at).getTime(),
+      status: savedReview.status,
     };
 
     commitDatabase((prev) => {
