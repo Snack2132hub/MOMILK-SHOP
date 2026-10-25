@@ -39,6 +39,16 @@ export async function listPublicReviews(): Promise<SupabaseReview[]> {
   return (data ?? []) as SupabaseReview[];
 }
 
+export async function listAdminReviews(): Promise<SupabaseReview[]> {
+  assertSupabaseConfigured();
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('id,customer_name,customer_handle,rating,service_type,comment,proof_image_url,likes,status,is_pinned,admin_reply,verified_slip,created_at')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as SupabaseReview[];
+}
+
 export async function submitReview(input: {
   customer_name: string;
   customer_handle?: string;
@@ -60,7 +70,7 @@ export async function submitReview(input: {
     service_type: input.service_type,
     comment: input.comment.trim(),
     proof_image_url: input.proof_image_url || null,
-    status: 'pending',
+    status: 'approved',
     likes: 0,
     is_pinned: false,
     admin_reply: null,
@@ -133,5 +143,16 @@ export async function saveStoreSettings(settings: Record<string, unknown>) {
   const { error } = await supabase
     .from('store_settings')
     .upsert({ id: true, settings, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+  if (error) throw error;
+}
+
+
+/** Persist admin moderation changes in Supabase. RLS restricts updates to admins. */
+export async function updatePublicReview(
+  id: string,
+  patch: Partial<Pick<SupabaseReview, 'status' | 'is_pinned' | 'admin_reply'>>,
+) {
+  assertSupabaseConfigured();
+  const { error } = await supabase.from('reviews').update(patch).eq('id', id);
   if (error) throw error;
 }

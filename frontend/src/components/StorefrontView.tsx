@@ -220,10 +220,10 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
   const goodCount = visibleReviews.filter((r) => r.serviceType === 'good').length;
   const badCount = visibleReviews.filter((r) => r.serviceType === 'bad').length;
 
-  const baseOffset = 122;
-  const totalDisplayReviews = baseOffset + visibleReviews.length;
-  const goodDisplayCount = baseOffset - 3 + goodCount;
-  const badDisplayCount = 2 + badCount;
+  // Public counts come only from approved reviews loaded from Supabase.
+  const totalDisplayReviews = visibleReviews.length;
+  const goodDisplayCount = goodCount;
+  const badDisplayCount = badCount;
 
   const avgRating =
     visibleReviews.length > 0
