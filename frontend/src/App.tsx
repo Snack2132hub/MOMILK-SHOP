@@ -15,7 +15,7 @@ import { StorefrontView } from './components/StorefrontView';
 import { AdminDashboardView } from './components/AdminDashboardView';
 import { AdminLoginModal } from './components/AdminLoginModal';
 import { supabase } from './lib/supabase';
-import { submitReview } from './lib/supabaseData';
+import { listPublicReviews, submitReview, updatePublicReview } from './lib/supabaseData';
 
 const STORAGE_KEY = 'momilk_shop_fullstack_db_v1';
 
@@ -103,6 +103,25 @@ export default function App() {
       active = false;
       authListener.subscription.unsubscribe();
     };
+  }, []);
+
+  // Load approved customer reviews from the real database on startup.
+  useEffect(() => {
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) return;
+    let active = true;
+    void listPublicReviews().then((rows) => {
+      if (!active) return;
+      const reviews: ReviewItem[] = rows.map((r) => ({
+        id: r.id, customerName: r.customer_name, customerHandle: r.customer_handle || undefined,
+        rating: r.rating, serviceType: r.service_type, comment: r.comment,
+        proofImageUrl: r.proof_image_url || undefined, likes: r.likes, likedByMe: false,
+        createdAt: new Date(r.created_at).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }),
+        timestampMs: new Date(r.created_at).getTime(), status: r.status, isPinned: r.is_pinned,
+        adminReply: r.admin_reply || undefined, verifiedSlip: r.verified_slip,
+      }));
+      setDb((prev) => ({ ...prev, reviews }));
+    }).catch((error) => console.error('[MOMILK] Unable to load public reviews:', error));
+    return () => { active = false; };
   }, []);
 
   // Persist local UI state only. Customer reviews are saved separately to Supabase.
@@ -315,6 +334,16 @@ export default function App() {
 
   // Admin Review Moderation
   const handleUpdateReview = (reviewId: string, patch: Partial<ReviewItem>) => {
+    const persistedPatch: { status?: 'approved' | 'pending' | 'hidden'; is_pinned?: boolean; admin_reply?: string | null } = {};
+    if (patch.status) persistedPatch.status = patch.status;
+    if (typeof patch.isPinned === 'boolean') persistedPatch.is_pinned = patch.isPinned;
+    if ('adminReply' in patch) persistedPatch.admin_reply = patch.adminReply ?? null;
+    if (Object.keys(persistedPatch).length) {
+      void updatePublicReview(reviewId, persistedPatch).catch((error) => {
+        console.error('[MOMILK] Unable to persist review moderation:', error);
+        window.alert('บันทึกการเปลี่ยนแปลงรีวิวไม่สำเร็จ กรุณาตรวจสอบสิทธิ์ฐานข้อมูล');
+      });
+    }
     const timestampStr = formatThaiTimestamp();
     commitDatabase((prev) => ({
       ...prev,
