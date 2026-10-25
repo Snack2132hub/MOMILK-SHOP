@@ -935,13 +935,14 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-2xl text-white font-bold text-sm shadow-md shadow-pink-200/80 hover:opacity-95 transition flex items-center justify-center gap-2 cursor-pointer"
+                  disabled={isSubmittingReview}
+                  className="w-full py-3.5 rounded-2xl text-white font-bold text-sm shadow-md shadow-pink-200/80 hover:opacity-95 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{
                     background: `linear-gradient(90deg, ${storeSettings.primaryColor}, #EC4899)`,
                   }}
                 >
                   <Send className="w-4 h-4" />
-                  <span>ส่งรีวิว</span>
+                  <span>{isSubmittingReview ? 'กำลังบันทึก...' : 'ส่งรีวิว'}</span>
                 </button>
               </form>
             </section>
