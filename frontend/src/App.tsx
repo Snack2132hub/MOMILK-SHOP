@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   AdminRole,
   DatabaseSchema,
@@ -35,7 +35,6 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'storefront' | 'admin'>('storefront');
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const isBackendAvailableRef = useRef<boolean | null>(null);
 
   // Restore an authenticated admin session on refresh. Demo/localStorage users
   // are deliberately never accepted as proof of administrator access.
@@ -106,55 +105,15 @@ export default function App() {
     };
   }, []);
 
-  // Sync from Express backend API if running
-  useEffect(() => {
-    fetch('/api/db')
-      .then((res) => {
-        if (res.ok) {
-          isBackendAvailableRef.current = true;
-          return res.status === 204 ? null : res.json();
-        }
-        isBackendAvailableRef.current = false;
-        return null;
-      })
-      .then((serverDb: DatabaseSchema | null) => {
-        if (serverDb && serverDb.storeSettings && Array.isArray(serverDb.reviews)) {
-          setDb(serverDb);
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(serverDb));
-          } catch {
-            // ignore
-          }
-        }
-      })
-      .catch(() => {
-        isBackendAvailableRef.current = false;
-      });
-  }, []);
-
-  // Persist helper that updates React state, localStorage, and Express server DB
+  // Persist local UI state only. Customer reviews are saved separately to Supabase.
+  // The old /api/db endpoint was removed because Vercel has no persistent JSON filesystem.
   const commitDatabase = useCallback((updater: (prev: DatabaseSchema) => DatabaseSchema) => {
     setDb((prev) => {
       const next = updater(prev);
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // ignore
-      }
-      if (isBackendAvailableRef.current !== false) {
-        fetch('/api/db', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(next),
-        })
-          .then((res) => {
-            if (!res.ok) {
-              isBackendAvailableRef.current = false;
-            }
-          })
-          .catch(() => {
-            isBackendAvailableRef.current = false;
-          });
+      } catch (error) {
+        console.warn('[MOMILK] Unable to persist local UI state:', error);
       }
       return next;
     });
