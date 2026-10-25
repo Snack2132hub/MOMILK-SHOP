@@ -915,13 +915,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
                         ลบภาพ
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={handleAttachSampleSlip}
-                      className="px-3 py-1.5 rounded-xl border border-pink-200 bg-pink-50/70 hover:bg-pink-100 text-pink-600 text-xs font-medium transition cursor-pointer whitespace-nowrap"
-                    >
-                      ใช้สลิปตัวอย่าง
-                    </button>
+                    
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
