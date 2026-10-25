@@ -156,3 +156,22 @@ export async function updatePublicReview(
   const { error } = await supabase.from('reviews').update(patch).eq('id', id);
   if (error) throw error;
 }
+
+
+/** Upload storefront images/audio to Supabase Storage and return persistent public URLs. */
+export async function uploadStoreAsset(file: File, kind: 'branding' | 'music'): Promise<string> {
+  assertSupabaseConfigured();
+  if (kind === 'music' && !file.type.startsWith('audio/')) throw new Error('กรุณาเลือกไฟล์เสียง');
+  if (kind === 'branding' && !file.type.startsWith('image/')) throw new Error('กรุณาเลือกไฟล์รูปภาพ');
+  const bucket = kind === 'music' ? 'music' : 'store-assets';
+  const safeName = file.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'upload';
+  const path = `${kind}/${crypto.randomUUID()}-${safeName}`;
+  const { error } = await supabase.storage.from(bucket).upload(path, file, {
+    upsert: false,
+    contentType: file.type || undefined,
+    cacheControl: '3600',
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
+}
