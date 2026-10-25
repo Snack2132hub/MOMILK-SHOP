@@ -15,7 +15,7 @@ import { StorefrontView } from './components/StorefrontView';
 import { AdminDashboardView } from './components/AdminDashboardView';
 import { AdminLoginModal } from './components/AdminLoginModal';
 import { supabase } from './lib/supabase';
-import { listPublicReviews, submitReview, updatePublicReview } from './lib/supabaseData';
+import { listAdminReviews, listPublicReviews, submitReview, updatePublicReview } from './lib/supabaseData';
 
 const STORAGE_KEY = 'momilk_shop_fullstack_db_v1';
 
@@ -105,11 +105,12 @@ export default function App() {
     };
   }, []);
 
-  // Load approved customer reviews from the real database on startup.
+  // Keep storefront reviews and admin moderation lists synced with Supabase.
   useEffect(() => {
     if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) return;
     let active = true;
-    void listPublicReviews().then((rows) => {
+    const loadReviews = currentUser ? listAdminReviews : listPublicReviews;
+    void loadReviews().then((rows) => {
       if (!active) return;
       const reviews: ReviewItem[] = rows.map((r) => ({
         id: r.id, customerName: r.customer_name, customerHandle: r.customer_handle || undefined,
@@ -120,9 +121,9 @@ export default function App() {
         adminReply: r.admin_reply || undefined, verifiedSlip: r.verified_slip,
       }));
       setDb((prev) => ({ ...prev, reviews }));
-    }).catch((error) => console.error('[MOMILK] Unable to load public reviews:', error));
+    }).catch((error) => console.error('[MOMILK] Unable to load reviews:', error));
     return () => { active = false; };
-  }, []);
+  }, [currentUser?.id]);
 
   // Persist local UI state only. Customer reviews are saved separately to Supabase.
   // The old /api/db endpoint was removed because Vercel has no persistent JSON filesystem.
