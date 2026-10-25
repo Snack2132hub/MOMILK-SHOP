@@ -14,6 +14,7 @@ import {
 import { StorefrontView } from './components/StorefrontView';
 import { AdminDashboardView } from './components/AdminDashboardView';
 import { AdminLoginModal } from './components/AdminLoginModal';
+import { supabase } from './lib/supabase';
 
 const STORAGE_KEY = 'momilk_shop_fullstack_db_v1';
 
@@ -34,6 +35,72 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const isBackendAvailableRef = useRef<boolean | null>(null);
+
+  // Restore an authenticated admin session on refresh. Demo/localStorage users
+  // are deliberately never accepted as proof of administrator access.
+  useEffect(() => {
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      setCurrentUser(null);
+      return;
+    }
+
+    let active = true;
+    const loadAdminFromSession = async (session: { user: { id: string; email?: string } } | null) => {
+      if (!session) {
+        if (active) setCurrentUser(null);
+        return;
+      }
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('id,display_name,username,role,status')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+        const role = profile?.role as AdminRole | undefined;
+        if (!profile || profile.status !== 'active' || !role || role === 'customer') {
+          if (active) setCurrentUser(null);
+          return;
+        }
+
+        const roleConfig = ROLE_PERMISSIONS_MAP[role];
+        const user: UserAccount = {
+          id: profile.id,
+          name: profile.display_name || session.user.email || 'Admin',
+          username: profile.username || (session.user.email || '').split('@')[0],
+          email: session.user.email || '',
+          role,
+          roleLabel: roleConfig.label,
+          avatarUrl: DEFAULT_MASCOT_SVG,
+          status: 'active',
+          totalReviews: 0,
+          lastActive: new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }),
+          permissions: roleConfig.permissions,
+        };
+        if (active) setCurrentUser(user);
+      } catch (error) {
+        console.error('[MOMILK] Unable to restore admin session:', error);
+        if (active) setCurrentUser(null);
+      }
+    };
+
+    void supabase.auth.getSession().then(({ data, error }) => {
+      if (error) console.error('[MOMILK] Unable to read auth session:', error);
+      return loadAdminFromSession(data?.session ?? null);
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Defer database work until after Supabase finishes its auth callback.
+      Promise.resolve().then(() => loadAdminFromSession(session));
+    });
+
+    return () => {
+      active = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   // Sync from Express backend API if running
   useEffect(() => {
@@ -460,6 +527,7 @@ export default function App() {
           currentUser={currentUser}
           onSwitchToStorefront={() => setViewMode('storefront')}
           onLogout={() => {
+            void supabase.auth.signOut();
             setCurrentUser(null);
             setViewMode('storefront');
           }}
@@ -477,7 +545,6 @@ export default function App() {
 
       {isLoginModalOpen && (
         <AdminLoginModal
-          users={db.users}
           onClose={() => setIsLoginModalOpen(false)}
           onLoginSuccess={(user) => {
             setCurrentUser(user);
