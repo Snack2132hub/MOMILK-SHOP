@@ -39,6 +39,16 @@ export async function listPublicReviews(): Promise<SupabaseReview[]> {
   return (data ?? []) as SupabaseReview[];
 }
 
+export async function listAdminReviews(): Promise<SupabaseReview[]> {
+  assertSupabaseConfigured();
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('id,customer_name,customer_handle,rating,service_type,comment,proof_image_url,likes,status,is_pinned,admin_reply,verified_slip,created_at')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as SupabaseReview[];
+}
+
 export async function submitReview(input: {
   customer_name: string;
   customer_handle?: string;
