@@ -61,6 +61,9 @@ export default function App() {
         if (error) throw error;
         const role = profile?.role as AdminRole | undefined;
         if (!profile || profile.status !== 'active' || !role || role === 'customer') {
+          // A customer or suspended profile must not retain a signed-in session
+          // that could be mistaken for an administrator session elsewhere.
+          await supabase.auth.signOut();
           if (active) setCurrentUser(null);
           return;
         }
