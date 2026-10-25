@@ -491,13 +491,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <p className="text-[11px] text-stone-500">
                 ดูแนวทางการแต่งร้านและการอัพขึ้นเซิฟเวอร์ Vercel / Firebase
               </p>
-              <button
-                type="button"
-                onClick={() => setActiveTab('settings')}
-                className="text-xs bg-white text-pink-600 border border-pink-200 px-3 py-1.5 rounded-xl font-semibold hover:bg-pink-50 w-full transition cursor-pointer"
-              >
-                คู่มือแนะนำ & เซิฟเวอร์
-              </button>
+              
             </div>
           </div>
         </aside>
