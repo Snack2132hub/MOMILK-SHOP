@@ -1,15 +1,11 @@
-# Backend workspace (migration target)
+# Backend — MOMILK-SHOP
 
-The legacy Express app in root `server.ts` currently stores data in `data/db.json`. That file-backed persistence is not durable on Vercel and must not be used for production data.
+Vercel serverless API functions live in the repository-root `api/` directory so that Vercel can discover them while the frontend builds from `frontend/`.
 
-## Target responsibilities
+- `GET /api/health` checks that server-side Supabase environment variables are present.
+- Use Supabase Postgres and Storage for durable persistence; do not use filesystem JSON on Vercel.
+- Protected routes must validate the Supabase access token and authorize the user's current `profiles.role` and `profiles.status`.
+- Keep privileged keys server-only; never use `VITE_` for secrets.
+- Do not use service-role credentials for requests that can safely run under the user's JWT and RLS.
 
-- API routes for privileged operations that must not run in the browser
-- Validate the authenticated Supabase user and role on every protected request
-- Use server-only environment variables for privileged Supabase operations when needed; never expose them through `VITE_*`
-- Store persistent data in Supabase Postgres and audio in Supabase Storage
-- Return typed JSON responses and safe errors
-
-## Vercel deployment note
-
-For a Vercel deployment, backend endpoints should be implemented as Vercel Functions (for example, under `api/`) or deployed as a separately hosted server. Do not start a long-running Express listener with `app.listen` as a Vercel function. This directory is a migration target only; production API routes have not yet been moved here.
+The legacy `/api/db` whole-database JSON contract has been removed from the Express server but the UI migration to normalized Supabase rows remains a separate required step. Do not claim that all dashboard writes are migrated until each action is connected and tested.
