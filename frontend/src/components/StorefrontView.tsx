@@ -68,8 +68,43 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
   // Copy LINE ID state
   const [copiedLine, setCopiedLine] = useState(false);
 
+  
   // Live Thailand Clock (GMT+7)
-  const [thaiTimeStr, setThaiTimeStr] = useState<string>('23 ต.ค. 2569 14:23:21 น.');
+  const [thaiTimeStr, setThaiTimeStr] = useState(() =>
+    new Date().toLocaleString('th-TH', {
+      timeZone: 'Asia/Bangkok',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }) + ' น.'
+  );
+
+  useEffect(() => {
+    const updateThaiTime = () => {
+      setThaiTimeStr(
+        new Date().toLocaleString('th-TH', {
+          timeZone: 'Asia/Bangkok',
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false,
+        }) + ' น.'
+      );
+    };
+
+    updateThaiTime();
+    const timer = window.setInterval(updateThaiTime, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
 
   // Lightbox modal for proof image
   const [previewSlipUrl, setPreviewSlipUrl] = useState<string | null>(null);
