@@ -30,7 +30,7 @@ interface StorefrontViewProps {
   currentUser: UserAccount | null;
   onOpenLogin: () => void;
   onSwitchToAdmin: () => void;
-  onAddReview: (review: Omit<ReviewItem, 'id' | 'likes' | 'createdAt' | 'timestampMs' | 'status'>) => void;
+  onAddReview: (review: Omit<ReviewItem, 'id' | 'likes' | 'createdAt' | 'timestampMs' | 'status'>) => Promise<void>;
   onToggleLike: (reviewId: string) => void;
   onTrackContactClick: (channel: 'line' | 'fb' | 'ig') => void;
 }
@@ -62,6 +62,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
   const [proofFileName, setProofFileName] = useState<string>('');
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Copy LINE ID state
@@ -314,7 +315,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
     setProofFileName('slip_momilk_verified.png');
   };
 
-  const handleSubmitReview = (e: React.FormEvent) => {
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
     if (!customerName.trim()) {
@@ -326,28 +327,35 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
       return;
     }
 
-    onAddReview({
-      customerName: customerName.trim(),
-      rating,
-      serviceType,
-      comment: comment.trim(),
-      proofImageUrl,
-      verifiedSlip: Boolean(proofImageUrl),
-    });
+    setIsSubmittingReview(true);
+    try {
+      await onAddReview({
+        customerName: customerName.trim(),
+        rating,
+        serviceType,
+        comment: comment.trim(),
+        proofImageUrl,
+        verifiedSlip: Boolean(proofImageUrl),
+      });
 
-    setCustomerName('');
-    setRating(5);
-    setServiceType('good');
-    setComment('');
-    setProofImageUrl(undefined);
-    setProofFileName('');
-    setCurrentPage(1);
-    setSubmitSuccess(
-      storeSettings.requireReviewApproval
-        ? 'ส่งรีวิวเรียบร้อยแล้ว! รีวิวของคุณอยู่ในคิวรอแอดมินอนุมัติ 💖'
-        : 'ส่งรีวิวสำเร็จแล้ว! ขอบคุณที่ร่วมรีวิวให้ร้าน MOMILK SHOP นะคะ 💖'
-    );
-    setTimeout(() => setSubmitSuccess(null), 5000);
+      setCustomerName('');
+      setRating(5);
+      setServiceType('good');
+      setComment('');
+      setProofImageUrl(undefined);
+      setProofFileName('');
+      setCurrentPage(1);
+      setSubmitSuccess(
+        'บันทึกรีวิวลงฐานข้อมูลแล้ว! หากรีวิวไม่แสดงทันที อาจกำลังรอแอดมินอนุมัติ 💖'
+      );
+      window.setTimeout(() => setSubmitSuccess(null), 5000);
+    } catch (error) {
+      console.error('[MOMILK] Failed to save review to Supabase:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setFormError('บันทึกรีวิวไม่สำเร็จ กรุณาลองใหม่อีกครั้ง (' + errorMessage + ')');
+    } finally {
+      setIsSubmittingReview(false);
+    }
   };
 
   const scrollToSection = (id: string) => {
