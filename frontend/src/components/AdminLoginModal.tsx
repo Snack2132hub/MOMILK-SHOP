@@ -151,7 +151,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="รหัสผ่านบัญชี Supabase"
+                placeholder=" "
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-pink-200 bg-pink-50/20 text-sm text-stone-800 focus:outline-none focus:border-pink-500"
               />
             </div>
