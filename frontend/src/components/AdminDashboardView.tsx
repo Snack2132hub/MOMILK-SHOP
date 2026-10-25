@@ -46,6 +46,7 @@ import {
 import { RealtimeAnalyticsView } from './RealtimeAnalyticsView';
 import { DeploymentAndDbGuide } from './DeploymentAndDbGuide';
 import { resolveContactUrl } from '../utils/urlHelper';
+import { uploadStoreAsset } from '../lib/supabaseData';
 
 export type AdminTabId =
   | 'customizer'
@@ -131,19 +132,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     setHasUnsavedChanges(true);
   };
 
-  const handleAssetUpload = (
+  const handleAssetUpload = async (
     field: 'logoUrl' | 'avatarUrl' | 'bannerUrl',
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        updateDraft(field, reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      setSaveToast('กำลังอัปโหลดรูปไปยัง Supabase Storage...');
+      const publicUrl = await uploadStoreAsset(file, 'branding');
+      updateDraft(field, publicUrl);
+      setSaveToast('อัปโหลดรูปสำเร็จ กดบันทึกการเปลี่ยนแปลงเพื่อบันทึกลงฐานข้อมูล');
+    } catch (error) {
+      console.error('[MOMILK] Image upload failed:', error);
+      setSaveToast('อัปโหลดรูปไม่สำเร็จ กรุณาตรวจสอบสิทธิ์ Storage ใน Supabase');
+    }
   };
 
   const handleBgmFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,30 +156,27 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
     const sizeStr = file.size > 1024 * 1024 ? `${sizeMb} MB` : `${Math.round(file.size / 1024)} KB`;
     setBgmFileSize(sizeStr);
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        const audioDataUrl = reader.result;
-        setDraftSettings((prev) => ({
-          ...prev,
-          bgmAudioUrl: audioDataUrl,
-          bgmAudioFileName: file.name,
-          bgmAudioName: file.name.replace(/\.[^/.]+$/, ''),
-          enableBgm: true,
-        }));
-        setHasUnsavedChanges(true);
-        setSaveToast(`อัปโหลดไฟล์เพลง "${file.name}" สำเร็จ (${sizeStr})`);
-        setTimeout(() => setSaveToast(null), 3500);
-
-        if (adminAudioRef.current) {
-          adminAudioRef.current.pause();
-          setIsAdminPlayingBgm(false);
-          adminAudioRef.current = null;
-        }
+    setSaveToast('กำลังอัปโหลดเพลงไปยัง Supabase Storage...');
+    try {
+      const publicUrl = await uploadStoreAsset(file, 'music');
+      setDraftSettings((prev) => ({
+        ...prev,
+        bgmAudioUrl: publicUrl,
+        bgmAudioFileName: file.name,
+        bgmAudioName: file.name.replace(/\.[^/.]+$/, ''),
+        enableBgm: true,
+      }));
+      setHasUnsavedChanges(true);
+      setSaveToast(`อัปโหลดไฟล์เพลง "${file.name}" สำเร็จ (${sizeStr}) กดบันทึกการเปลี่ยนแปลงเพื่อบันทึก`);
+      if (adminAudioRef.current) {
+        adminAudioRef.current.pause();
+        setIsAdminPlayingBgm(false);
+        adminAudioRef.current = null;
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('[MOMILK] Audio upload failed:', error);
+      setSaveToast('อัปโหลดเพลงไม่สำเร็จ กรุณาตรวจสอบสิทธิ์ Storage ใน Supabase');
+    }
   };
 
   const handleToggleAdminBgm = () => {
@@ -1402,61 +1402,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Method 2: Online URL / Presets */}
-                    <div className="p-5 rounded-2xl border border-pink-100 bg-white flex flex-col justify-between space-y-4">
-                      <div>
-                        <div className="flex items-center space-x-2 text-stone-800 font-bold text-sm mb-1">
-                          <Music className="w-4 h-4 text-pink-500" />
-                          <span>วิธีที่ 2: ลิงก์เพลงออนไลน์ หรือเพลงพรีเซ็ต</span>
-                        </div>
-                        <p className="text-xs text-stone-500">
-                          ระบุลิงก์ MP3 URL โดยตรง หรือคลิกเลือกเพลงพรีเซ็ตผ่อนคลายที่เตรียมไว้
-                        </p>
-                      </div>
-
-                      <div className="space-y-3">
-                        <input
-                          type="url"
-                          value={draftSettings.bgmAudioUrl}
-                          onChange={(e) => {
-                            updateDraft('bgmAudioUrl', e.target.value);
-                            updateDraft('bgmAudioFileName', 'ลิงก์เพลงภายนอก (Audio URL)');
-                          }}
-                          placeholder="https://example.com/music.mp3"
-                          className="w-full px-3.5 py-2 text-xs rounded-xl border border-pink-200 bg-pink-50/20 font-mono"
-                        />
-
-                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                          <span className="text-[11px] text-stone-400">พรีเซ็ตแนะนำ:</span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleSelectPresetBgm(
-                                'เพลงพาสเทลสายลม (Gentle Breeze)',
-                                'https://actions.google.com/sounds/v1/ambiences/Gentle_Breeze.ogg',
-                                'Gentle_Breeze.ogg'
-                              )
-                            }
-                            className="px-2.5 py-1 rounded-lg border border-pink-200 hover:border-pink-300 bg-pink-50/50 hover:bg-pink-100 text-[11px] font-semibold text-pink-700 transition cursor-pointer"
-                          >
-                            🌸 Gentle Breeze (สายลม)
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleSelectPresetBgm(
-                                'เพลงน้ำไหลผ่อนคลาย (Stream Water)',
-                                'https://actions.google.com/sounds/v1/water/stream_water.ogg',
-                                'stream_water.ogg'
-                              )
-                            }
-                            className="px-2.5 py-1 rounded-lg border border-pink-200 hover:border-pink-300 bg-pink-50/50 hover:bg-pink-100 text-[11px] font-semibold text-pink-700 transition cursor-pointer"
-                          >
-                            💧 Stream Water (ธรรมชาติ)
-                          </button>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </section>

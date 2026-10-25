@@ -15,7 +15,7 @@ import { StorefrontView } from './components/StorefrontView';
 import { AdminDashboardView } from './components/AdminDashboardView';
 import { AdminLoginModal } from './components/AdminLoginModal';
 import { supabase } from './lib/supabase';
-import { listAdminReviews, listPublicReviews, submitReview, updatePublicReview } from './lib/supabaseData';
+import { getStoreSettings, listAdminReviews, listPublicReviews, saveStoreSettings, submitReview, updatePublicReview } from './lib/supabaseData';
 
 const STORAGE_KEY = 'momilk_shop_fullstack_db_v1';
 
@@ -103,6 +103,17 @@ export default function App() {
       active = false;
       authListener.subscription.unsubscribe();
     };
+  }, []);
+
+  // Load persisted storefront branding/contact/music settings from Supabase.
+  useEffect(() => {
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) return;
+    let active = true;
+    void getStoreSettings().then((saved) => {
+      if (!active || !saved) return;
+      setDb((prev) => ({ ...prev, storeSettings: { ...prev.storeSettings, ...(saved as Partial<StoreSettings>) } }));
+    }).catch((error) => console.error('[MOMILK] Unable to load store settings:', error));
+    return () => { active = false; };
   }, []);
 
   // Keep storefront reviews and admin moderation lists synced with Supabase.
@@ -313,24 +324,29 @@ export default function App() {
 
   // Save Store Settings from Admin Customizer
   const handleSaveStoreSettings = (newSettings: StoreSettings) => {
-    const timestampStr = formatThaiTimestamp();
-    commitDatabase((prev) => ({
-      ...prev,
-      storeSettings: newSettings,
-      analytics: {
-        ...prev.analytics,
-        liveEvents: [
-          {
-            id: `evt-${Date.now()}`,
-            type: 'admin_action',
-            message: `บันทึกการตั้งค่าหน้าร้าน "${newSettings.storeName}" และอัปเดตสีธีม`,
-            timestamp: timestampStr,
-            actor: currentUser?.name || 'แอดมิน',
-          },
-          ...prev.analytics.liveEvents,
-        ],
-      },
-    }));
+    void saveStoreSettings(newSettings as unknown as Record<string, unknown>).then(() => {
+      const timestampStr = formatThaiTimestamp();
+      commitDatabase((prev) => ({
+        ...prev,
+        storeSettings: newSettings,
+        analytics: {
+          ...prev.analytics,
+          liveEvents: [
+            {
+              id: `evt-${Date.now()}`,
+              type: 'admin_action',
+              message: `บันทึกการตั้งค่าหน้าร้าน "${newSettings.storeName}" และอัปเดตข้อมูล`,
+              timestamp: timestampStr,
+              actor: currentUser?.name || 'แอดมิน',
+            },
+            ...prev.analytics.liveEvents,
+          ],
+        },
+      }));
+    }).catch((error) => {
+      console.error('[MOMILK] Unable to save store settings:', error);
+      window.alert('บันทึกการตั้งค่าไม่สำเร็จ กรุณาตรวจสอบ Supabase และสิทธิ์การเข้าถึง');
+    });
   };
 
   // Admin Review Moderation
