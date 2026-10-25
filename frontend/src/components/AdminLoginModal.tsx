@@ -103,7 +103,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             </div>
             <div>
               <h2 id="admin-login-title" className="text-lg font-bold text-stone-800">เข้าสู่ระบบจัดการหลังบ้าน</h2>
-              <p className="text-xs text-stone-500">ยืนยันตัวตนด้วยบัญชี Supabase Auth</p>
+              <p className="text-xs text-stone-500"> </p>
             </div>
           </div>
           <button
