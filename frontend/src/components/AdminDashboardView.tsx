@@ -464,18 +464,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('contacts')}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-semibold transition cursor-pointer ${
-                  activeTab === 'contacts'
-                    ? 'bg-gradient-to-r from-pink-500 to-pink-400 text-white shadow-sm shadow-pink-200'
-                    : 'text-stone-600 hover:bg-pink-50 hover:text-pink-600'
-                }`}
-              >
-                <Mail className="w-4 h-4 shrink-0" />
-                <span>ช่องทางติดต่อ</span>
-              </button>
+              
 
               <button
                 type="button"
@@ -490,46 +479,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <span>สถิติและยอดชม</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('settings')}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-semibold transition cursor-pointer ${
-                  activeTab === 'settings'
-                    ? 'bg-gradient-to-r from-pink-500 to-pink-400 text-white shadow-sm shadow-pink-200'
-                    : 'text-stone-600 hover:bg-pink-50 hover:text-pink-600'
-                }`}
-              >
-                <Settings className="w-4 h-4 shrink-0" />
-                <span>ตั้งค่าระบบ & คู่มือเซิฟเวอร์</span>
-              </button>
+              
             </nav>
-
-            {/* Quick Role Switcher Box inside Sidebar */}
-            <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-2">
-              <p className="text-[11px] font-bold text-stone-700 flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5 text-pink-500" />
-                <span>สลับสิทธิ์ทดสอบ (RBAC):</span>
-              </p>
-              <div className="space-y-1">
-                {db.users
-                  .filter((u) => u.role !== 'customer')
-                  .map((u) => (
-                    <button
-                      key={u.id}
-                      type="button"
-                      onClick={() => onSwitchUserRole(u)}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition flex items-center justify-between cursor-pointer ${
-                        currentUser.id === u.id
-                          ? 'bg-pink-100 text-pink-700 font-bold'
-                          : 'text-stone-600 hover:bg-white'
-                      }`}
-                    >
-                      <span className="truncate">{u.name.split(' ')[0]}</span>
-                      <span className="text-[10px] uppercase">{u.role}</span>
-                    </button>
-                  ))}
-              </div>
-            </div>
 
             {/* Quick Help Card (Matches Image 3 & Image 4) */}
             <div className="bg-pink-50/70 border border-pink-200/60 rounded-2xl p-4 text-center space-y-2">
